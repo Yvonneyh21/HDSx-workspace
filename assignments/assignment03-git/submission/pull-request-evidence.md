@@ -10,7 +10,8 @@
 
 **Documentation change commit hash:** 7ae36ef083ded33c231c1671c201da3601769ead
 
-**Final commit hash:** To be updated after completing the submission files.
+**Final commit hash:** 6db6cf060482e0a1b07d71063a3e8f41798b9290
+This commit contains the three Assignment 3 submission evidence files. A subsequent commit updates this evidence note.
 
 ## Pull Request Summary
 
