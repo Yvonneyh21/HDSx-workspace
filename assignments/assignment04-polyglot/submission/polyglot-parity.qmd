@@ -1,0 +1,84 @@
+
+# Assignment 4: Polyglot
+title: "Assignment 4: Polyglot"
+author: "Yvonne"
+format: html
+---
+
+## Load Data
+
+```{r}
+library(tidyverse)
+
+nhanes <- read_csv(
+  "examples/nhanes-equity/data/nhanes_equity_v6.csv",
+  show_col_types = FALSE
+)
+```
+```{r}
+dim(nhanes)
+names(nhanes)
+```
+
+### BMI Summary by Income Group and Gender
+
+```{r}
+bmi_summary <- nhanes |>
+  filter(!is.na(BMI), !is.na(IncomeGroup), !is.na(Gender)) |>
+  group_by(IncomeGroup, Gender) |>
+  summarise(
+    n = n(),
+    mean_bmi = mean(BMI),
+    sd_bmi = sd(BMI),
+    .groups = "drop"
+  )
+
+bmi_summary
+```
+### Reusable R Function
+
+```{r}
+summarize_bmi <- function(data) {
+  data |>
+    filter(!is.na(BMI), !is.na(IncomeGroup), !is.na(Gender)) |>
+    group_by(IncomeGroup, Gender) |>
+    summarise(
+      n = n(),
+      mean_bmi = mean(BMI),
+      sd_bmi = sd(BMI),
+      .groups = "drop"
+    )
+}
+
+bmi_function_result <- summarize_bmi(nhanes)
+
+bmi_function_result
+```
+```{r}
+bmi_summary_rounded <- bmi_summary |>
+  mutate(
+    mean_bmi = round(mean_bmi, 2),
+    sd_bmi = round(sd_bmi, 2)
+  )
+
+bmi_summary_rounded
+```
+
+
+## Parity Discussion
+
+I compared the R and Python results using the same NHANES dataset.
+
+Both languages loaded 105,626 rows and 18 columns. After removing missing values in BMI, IncomeGroup, and Gender, both retained 87,647 rows.
+
+Both analyses produced 6 groups based on IncomeGroup and Gender. The group counts, mean BMI, and standard deviations matched after rounding to two decimal places.
+
+The R function and Python helper also reproduced their original summary results.
+
+No differences were identified in the checked results.
+
+## Rendered Output
+
+This Quarto document can be rendered to HTML using:
+
+`quarto render polyglot-parity.qmd`
