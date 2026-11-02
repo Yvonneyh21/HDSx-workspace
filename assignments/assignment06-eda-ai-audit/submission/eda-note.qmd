@@ -1,0 +1,95 @@
+---
+title: "Assignment 6: EDA and AI Audit"
+format: html
+---
+
+## Load Data
+
+```{r}
+library(tidyverse)
+library(knitr)
+# AI prompt: Copilot helped check file paths.
+candidate_paths <- c(
+  "../../../examples/nhanes-equity/data/nhanes_equity_v6.csv",
+  "examples/nhanes-equity/data/nhanes_equity_v6.csv"
+)
+
+data_path <- candidate_paths[file.exists(candidate_paths)][1]
+
+if (is.na(data_path)) {
+  stop("Could not find the NHANES CSV file.")
+}
+
+nhanes <- read_csv(data_path, show_col_types = FALSE)
+
+nrow(nhanes)
+# Verified: Confirmed the dataset contained 105,626 rows.
+```
+
+
+## Define the Analysis Cohort
+
+Restrict the analysis to adults aged 20–80 to focus on adult BMI summaries.
+
+```{r}
+# AI prompt: ChatGPT helped organize the cohort filter.
+analysis_df <- nhanes |>
+  filter(Age >= 20, Age <= 80)
+
+cohort_counts <- tibble(
+  step = c("Prepared CSV rows", "Rows after age 20-80 restriction"),
+  n = c(nrow(nhanes), nrow(analysis_df))
+)
+
+kable(cohort_counts)
+# Verified: Confirmed that filtering ages 20–80 resulted in 57,137 rows.
+```
+
+
+## Missingness Check
+
+Check missing values for six key variables in the analysis cohort.
+
+```{r}
+# AI prompt: ChatGPT helped organize the missingness check using the class example.
+key_vars <- c("BMI", "Age", "IncomeGroup", "Gender", "Race", "Cycle")
+
+missingness <- tibble(variable = key_vars) |>
+  mutate(
+    missing_n = vapply(analysis_df[key_vars], function(x) sum(is.na(x)), numeric(1)),
+    missing_percent = round(100 * missing_n / nrow(analysis_df), 1)
+  )
+
+kable(missingness)
+# Verified: Compared missing counts and percentages with the class example.
+```
+
+
+## Table 1 Summary
+
+Summarized BMI and age by income group using unweighted descriptive statistics.
+
+```{r}
+# AI prompt: ChatGPT helped organize Table 1 using the class example.
+mean_sd <- function(x) {
+  sprintf("%.1f (%.1f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))
+}
+
+table1 <- analysis_df |>
+  filter(!is.na(IncomeGroup)) |>
+  group_by(IncomeGroup) |>
+  summarise(
+    N = n(),
+    `BMI, mean (SD)` = mean_sd(BMI),
+    `Age, mean (SD)` = mean_sd(Age),
+    .groups = "drop"
+  )
+
+kable(table1)
+write_csv(table1, "table1.csv")
+# Verified: Compared group counts and mean (SD) values with the class example.
+```
+
+## Methods Note
+
+I used the prepared NHANES Health Equity classroom dataset. The analysis included adults aged 20–80. I summarized BMI and age by income group using unweighted descriptive statistics. Missing values were checked before the analysis; records with missing IncomeGroup were excluded from Table 1, and missing BMI values were ignored when calculating BMI mean and SD. These results describe the classroom dataset only and should not be interpreted as causal effects or population estimates.
