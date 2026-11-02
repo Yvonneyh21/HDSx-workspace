@@ -1,0 +1,95 @@
+
+```{r}
+library(readr)
+library(dplyr)
+
+candidate_paths <- c(
+  "examples/nhanes-equity/data/nhanes_equity_v6.csv",
+  "../../examples/nhanes-equity/data/nhanes_equity_v6.csv"
+)
+
+nhanes_path <- candidate_paths[file.exists(candidate_paths)][1]
+if (is.na(nhanes_path)) {
+  stop("Could not find examples/nhanes-equity/data/nhanes_equity_v6.csv")
+}
+
+nhanes_analysis <- read_csv(nhanes_path, show_col_types = FALSE)
+
+nhanes_analysis |>
+  summarise(
+    rows = n(),
+    missing_bmi = sum(is.na(BMI)),
+    missing_income = sum(is.na(IncomeGroup))
+  )
+  ```
+
+  ```{r}
+  nhanes_analysis |>
+  filter(!is.na(BMI), !is.na(IncomeGroup), Age >= 20, Age <= 80) |>
+  group_by(IncomeGroup) |>
+  summarise(
+    n = n(),
+    mean_bmi = round(mean(BMI), 1),
+    .groups = "drop"
+  )
+```
+
+## Cohort
+
+```{r}
+analysis_df <- nhanes |>
+  filter(Age >= 20, Age <= 80)
+
+cohort_counts <- tibble(
+  step = c("Prepared CSV rows", "After age 20-80 restriction"),
+  n = c(nrow(nhanes), nrow(analysis_df))
+)
+
+cohort_counts
+```
+
+## Missingness
+
+```{r}
+key_vars <- c("BMI", "Age", "IncomeGroup", "Gender", "Race", "Cycle")
+
+missingness <- tibble(variable = key_vars) |>
+  mutate(
+    missing_n = vapply(analysis_df[key_vars], function(x) sum(is.na(x)), numeric(1)),
+    missing_percent = round(100 * missing_n / nrow(analysis_df), 1)
+  )
+
+missingness
+```
+
+```{r}
+missingness <- analysis_df |>
+    select(BMI, Age, IncomeGroup, Gender, Race, Cycle) |>
+    summarise(across(everything(), ~ sum(is.na(.x)))) |>
+    pivot_longer(everything(), names_to = "Variable", values_to = "Missing") |>
+    mutate(Percent_Missing = 100 * Missing / nrow(analysis_df))
+missingness
+```
+
+## Table 1
+```{r}
+mean_sd <- function(x) {
+  sprintf("%.1f (%.1f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))
+}
+
+table1 <- analysis_df |>
+  filter(!is.na(IncomeGroup)) |>
+  group_by(IncomeGroup) |>
+  summarise(
+    N = n(),
+    `BMI, mean (SD)` = mean_sd(BMI),
+    `Age, mean (SD)` = mean_sd(Age),
+    .groups = "drop"
+  )
+
+kable(table1)
+```
+
+```{r}
+
+```
